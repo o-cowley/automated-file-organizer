@@ -4,11 +4,14 @@ from shutil import move
 from time import sleep
 
 import logging
+from tkinter import *
+from tkinter.filedialog import askdirectory
+from tkinter.messagebox import showinfo
 
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
-from tkinter import *
+
 
 class Window(Frame):
 
@@ -27,8 +30,14 @@ class Window(Frame):
         entry = Entry(self)
         entry.grid(row=1, column = 1)
 
+
         doSomething = Button(self, text="Show me the entry", command=lambda: self.reactToEntry(entry.get()))
         doSomething.grid(row=1, column=0)
+
+        findFile = Button(self, text='Find a file',font =
+               ('calibri', 10, 'bold', 'underline'),
+                foreground = 'red', command=getFileLocation)
+        findFile.grid(row=2, column=0)
 
     def clearTextSpot(self):
         slave = self.grid_slaves(row=0, column=1)
@@ -38,7 +47,7 @@ class Window(Frame):
 
     def showText(self):
         self.clearTextSpot()
-        text = Label(self, text="Hey there good lookin!")
+        text = Label(self, text="Hey there....")
         text.grid(row=0, column = 1)
 
     def reactToEntry(self, toPut):
@@ -50,11 +59,33 @@ class Window(Frame):
         # mkdir(new_dir)
         # self.master.destroy()
 
+
+
+
+def getFileLocation():
+
+    def show_selected_dir():
+        global source_dir
+        showinfo(
+            title= 'Selected location',
+            message= source_dir
+        )
+
+    filename = askdirectory(
+        title= 'Pick a folder to monitor',
+        initialdir='/'
+    )
+    global source_dir
+    source_dir = filename
+    
+    show_selected_dir()
+
 window = Tk()
 
 Window(window)
 
 window.mainloop()
+
 
 
 # The source directory, ie. the Downloads folder, that will be watched for changes to organize
