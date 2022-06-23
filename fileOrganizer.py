@@ -135,10 +135,13 @@ def trigger_organize():
                             logging.info("Moved document file: " + name)
 
 def monitor(button: Button):
-    
-    global monitoring
-    monitoring = False if monitoring else True
-    button.config(fg= 'GREEN' if monitoring else 'RED')
+    global source_dir
+    if (source_dir != ""):
+        showinfo(message="You dont have a directory to monitor yet!")
+    else:
+        global monitoring
+        monitoring = False if monitoring else True
+        button.config(fg= 'GREEN' if monitoring else 'RED')
 
 class Window(Frame):
 
