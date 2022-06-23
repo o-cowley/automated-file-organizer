@@ -380,7 +380,7 @@ window.mainloop()
 #     path = source_dir
 #     event_handler = MoveHandler()
 #     observer = Observer()
-#     observer.schedule(event_handler, path, recursive=True)
+#     observer.schedule(event_handler, path, recursive=False)
 #     observer.start()
 #     try:
 #         while True:
