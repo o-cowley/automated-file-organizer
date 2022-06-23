@@ -16,7 +16,7 @@ from watchdog.events import FileSystemEventHandler
 
 # The source directory, ie. the Downloads folder, that will be watched for changes to organize
 # source_dir = "/Users/olivercowley/Downloads"
-source_dir = ""
+source_dir: string = ""
 
 # Dictionary arranged by key phrases or words with destination based on assumed content if the key is found
 dir_by_name = {
@@ -34,7 +34,10 @@ dir_by_type = {
 
 # This variable represents the current status of the organizer, if True then ongoing monitoring is happening, 
 # False means the user must trigger the organization
-monitoring = False
+monitoring: bool = False
+
+# Observer variable to allow for global access for starting and stopping the automated organization 
+observer: Observer = None
 
 
 
@@ -135,10 +138,19 @@ def trigger_organize():
 # 
 def monitor(button: Button):
     global source_dir
-    if (source_dir != ""):
+    if (source_dir == ""):
         showinfo(message="You dont have a directory selected to monitor yet!")
     else:
         global monitoring
+        global observer
+        if monitoring:
+            observer.stop()
+            observer.join()
+            observer = None
+        else:
+            observer = Observer()
+            observer.schedule(MoveHandler(), source_dir, recursive=False)
+            observer.start()
         monitoring = False if monitoring else True
         button.config(fg= 'GREEN' if monitoring else 'RED')
 
@@ -169,6 +181,8 @@ class Window(Frame):
     # 
     # 
     def init_window(self):
+
+        
 
         #  Iitializes enclosing Frame for the GUI
         self.master.title("Automated File Organizer")
@@ -357,18 +371,30 @@ def getFileLocation(self, label_to_change: Label):
     global source_dir
     source_dir = filename
 
+
     #  Change text on label to new source directory 
     label_to_change.config(text = 'This is the location: ' + source_dir)
+
+    showinfo(message="If you currently have monitoring turned on, please turn off and on again to update monitored directory")
+
+
+
+
+# Main
+
+if __name__ == "__main__":
+    window = Tk()
     
+    # logging.basicConfig(level=logging.INFO,
+    #                     format='%(asctime)s - %(message)s',
+    #                     datefmt='%Y-%m-%d %H:%M:%S')
 
+    Window(window)
 
-# Create a new tkinter window, initialize, and run
-window = Tk()
+    window.resizable(False, False)
 
-Window(window)
-window.resizable(False, False)
+    window.mainloop()
 
-window.mainloop()
 
 
 # THIS IS THE CODE TO UNCOMMENT FOR AUTOMATIC MONITORING (CAREFUL ABOUT SOURCE DIR SETTINGS BEFORE DOING SO)
