@@ -31,6 +31,9 @@ dir_by_type = {
     ".svg": "/Users/olivercowley/Desktop/Organized Downloads/Downloaded Images"
     }
 
+
+# This variable represents the current status of the organizer, if True then ongoing monitoring is happening, 
+# False means the user must trigger the organization
 monitoring = False
 
 
@@ -99,24 +102,13 @@ class MoveHandler(FileSystemEventHandler):
                         return
 
 
-# if __name__ == "__main__":
-#     logging.basicConfig(level=logging.INFO,
-#                         format='%(asctime)s - %(message)s',
-#                         datefmt='%Y-%m-%d %H:%M:%S')
-#     path = source_dir
-#     event_handler = MoveHandler()
-#     observer = Observer()
-#     observer.schedule(event_handler, path, recursive=True)
-#     observer.start()
-#     try:
-#         while True:
-#             sleep(10)
-#     except KeyboardInterrupt:
-#         observer.stop()
-#     observer.join()
 
 
-#  THIS IS THE SAME AS IN THE MOVE HANDLER, JUST USING FOR CUSTOM TRIGGER OF ORGANIZATION
+# Manually triggered version of the function to organize source_dir
+# 
+#   The function scans for key pharses first as content is considered more important than file type. If no key
+#       phrases are detected then it sorts the files by type. If neither are found then file is left in downloads
+# 
 def trigger_organize():
     if(source_dir != ""):
         with scandir(source_dir) as entries:
@@ -134,43 +126,74 @@ def trigger_organize():
                             moveFile(dir_by_type[key], entry, name)
                             logging.info("Moved document file: " + name)
 
+# Toggles between automatic observing/organization and manually triggered optimization
+# 
+#   Does not switch to automatic monitoring unless a directory has been selected. Changes
+#   the colour of the button text according to if the monitoring is happening(green) or not(red)
+# 
+#   @param  Button  button    the button used to toggle with the text that needs the colour changed
+# 
 def monitor(button: Button):
     global source_dir
     if (source_dir != ""):
-        showinfo(message="You dont have a directory to monitor yet!")
+        showinfo(message="You dont have a directory selected to monitor yet!")
     else:
         global monitoring
         monitoring = False if monitoring else True
         button.config(fg= 'GREEN' if monitoring else 'RED')
 
+
+# Window class that takes in a frame and initializes all settings and characteristics of the GUI
+# 
+#   Initializes and places all elements within the root frame before the Window is launched
+# 
+#   @param  Frame   Frame   The frame that is going to be initialized
+# 
 class Window(Frame):
 
+    # Automatically run initialization function that triggers all other  
+    # 
+    #   @param  string  master      master Frame, set to NONE as this is the top level window
+    #  
     def __init__(self, master=NONE):
         Frame.__init__(self, master)
         self.master = master
         self.init_window()
 
+    # Custom init function that creates and packs all elements of the visible window
+    # 
+    #   Initializes all elements including assigning event handler functions based on hard coded
+    #   types and keywords
+    # 
+    #   @param  Window  self    Top level window of the GUI, will always be the main Frame 
+    # 
+    # 
     def init_window(self):
-        self.master.title("GUI")
+
+        #  Iitializes enclosing Frame for the GUI
+        self.master.title("Automated File Organizer")
         self.pack(fill=BOTH, expand=0)
 
+        # Creates Frame to hold Main information: Source directory, manual/automatic organization button and status display, and trigger to do a manual organize of the folder
         source_frame = Frame(self, relief=RAISED, borderwidth=4)
         source_frame.pack(fill=X)
         
+        # Label to display the location that is being organized (and possible monitored based on status)
         organizing_location = Label(source_frame, text=f'This is the location you are organizing: {source_dir}', fg='BLUE')
         organizing_location.pack(side=LEFT)
 
-
-        organize_button = Button(source_frame, text='Click me to organize the folder', command=trigger_organize)
+        # Manual organization trigger
+        organize_button = Button(source_frame, text='Organize folder', command=trigger_organize)
         organize_button.pack(side=RIGHT)
 
+        # Button that displays the status of automatic(green)/manual(red) organization based on text colour, on click toggles between thw two
         global monitoring
         monitor_button = Button(source_frame, text='Monitoring?',fg='green' if monitoring else 'red', command=lambda: monitor(monitor_button))
         monitor_button.pack(side=RIGHT)
 
+        # Frame setup for display of the various filetypes and keywords that are being checked for organization
 
-
-        
+        # Setup frame to display the types we are organizing
         type_frame = Frame(self, relief=SUNKEN, borderwidth=1)
         
         Label(self, text='Sorted by file type:', fg='#B76E79').pack()
@@ -179,7 +202,7 @@ class Window(Frame):
 
         type_frame.pack(fill=X)
 
-
+        # Setup frame to display the keywords we are checking for organizing 
         name_frame = Frame(self, relief=SUNKEN, borderwidth=1)
 
         Label(self, text='Sorted by keywords in filename:', fg='#B76E79').pack()
@@ -188,48 +211,45 @@ class Window(Frame):
         
         name_frame.pack(fill=X)
 
-        Button(self, text="Click here to change file we are organizing", command=lambda: getFileLocation(self, organizing_location)).pack(side=LEFT)
-        Button(self, text="Add new type", command=lambda: add_new_filetype(type_frame)).pack(side=RIGHT)
-        Button(self, text="Add new keyword", command=lambda: add_new_key(name_frame)).pack(side=RIGHT)
-        Button(self, text="LOG DIR BY TYPE", command=lambda: print(dir_by_type)).pack(side=LEFT)
-        Button(self, text="LOG DIR BY KEY", command=lambda: print(dir_by_name)).pack(side=LEFT)
 
-        # quitButton = Button(self, text="Talk to me", command=self.showText)
-        # quitButton.grid(row=0, column=0, sticky=E)
+        # Initialize the menubar
+        menubar = Menu(self.master)
 
-        # entry = Entry(self)
-        # entry.grid(row=1, column = 1)
+        menu_options = Menu(menubar, tearoff=0)
+        menu_options.add_command(label="Hide Settings", command=lambda: self.master.withdraw())
+        menu_options.add_command(label="Show Settings", command=lambda: self.master.deiconify())
+        menu_options.add_separator()
+        menu_options.add_command(label="Change file we are organizing", command=lambda: getFileLocation(self, organizing_location))
+        menu_options.add_command(label="Add new type", command=lambda: add_new_filetype(type_frame))
+        menu_options.add_command(label="Add new keyword", command=lambda: add_new_key(name_frame))
+        menubar.add_cascade(label='Settings', menu=menu_options)
 
+        menu_log = Menu(menubar, tearoff=0)
+        menu_log.add_command(label="Print type dictionary", command=lambda: print(dir_by_type))
+        menu_log.add_command(label="Print keyword dictionary", command=lambda: print(dir_by_name))
+        
+        menubar.add_cascade(label='Dictionaries', menu=menu_log)
 
-        # doSomething = Button(self, text="Show me the entry", command=lambda: self.reactToEntry(entry.get()))
-        # doSomething.grid(row=1, column=0)
-
-        # findFile = Button(self, text='Find a file',font =
-        #        ('calibri', 10, 'bold', 'underline'),
-        #         foreground = 'red', command=getFileLocation)
-        # findFile.grid(row=2, column=0)
-
-    def clearTextSpot(self):
-        slave = self.grid_slaves(row=0, column=1)
-        if(len(slave) > 0):
-            slave[0].grid_forget()
+        self.master.config(menu=menubar)
 
 
-    def showText(self):
-        self.clearTextSpot()
-        text = Label(self, text="Hey there....")
-        text.grid(row=0, column = 1)
+        # IN WINDOW BUTTONS (If needed to be added back in)
 
-    def reactToEntry(self, toPut):
-        self.clearTextSpot()
-        text = Label(self, text=toPut)
-        text.grid(row=0, column = 1, sticky=W)
-
-        # new_dir = "/Users/olivercowley/Desktop/Organized " + toPut
-        # mkdir(new_dir)
-        # self.master.destroy()
+        # Button 
+        # Button(self, text="Click here to change file we are organizing", command=lambda: getFileLocation(self, organizing_location)).pack(side=LEFT)
+        # Button(self, text="Add new type", command=lambda: add_new_filetype(type_frame)).pack(side=RIGHT)
+        # Button(self, text="Add new keyword", command=lambda: add_new_key(name_frame)).pack(side=RIGHT)
+        # Button(self, text="LOG DIR BY TYPE", command=lambda: print(dir_by_type)).pack(side=LEFT)
+        # Button(self, text="LOG DIR BY KEY", command=lambda: print(dir_by_name)).pack(side=LEFT)
 
 
+
+# Prompts user to enter a filetype to be included in the organization
+# 
+#   Popups prompt for the new filetype followed by the filepath of the folder to put the files of that type in
+# 
+#   @param  Frame  frame    Parent frame that holds keyword/filepath entries
+# 
 def add_new_filetype(frame: Frame):
     new_filetype = askstring(title="Add this file type", prompt="Enter a new file type to organize")
 
@@ -240,6 +260,13 @@ def add_new_filetype(frame: Frame):
     
     add_element_type(frame, new_filetype, filename)
 
+
+# Prompts user to enter a keyword to be included in the organization
+# 
+#   Popups prompt for the new keyword followed by the filepath of the folder to put the files with they keyword in to
+# 
+#   @param  Frame  frame    Parent frame that holds keyword/filepath entries
+# 
 def add_new_key(frame: Frame):
     new_key = askstring(title="Add a new key", prompt="Enter a new keyword to sort by")
 
@@ -251,36 +278,77 @@ def add_new_key(frame: Frame):
     add_element_name(frame, new_key, filename)
 
 
-
-def add_element_type(frame: Frame, fileType: string, filename: string):
+# Adds a frame to the gui that represents an element from the filetype dictionary
+# 
+#   Adds all the required labels and buttons to the frame and registers the event handler
+#   for the button to trigger deletion when pressed. Also adds the element to the dir_by_type
+#   dictionary.
+# 
+#   @param  Frame   frame       parent frame to hold this element
+#   @param  string  filetype    name of the filetype to be added
+#   @param  string  filepath    filepath that a file with the given keyword should be moved to
+# 
+# 
+def add_element_type(frame: Frame, fileType: string, filepath: string):
     new_frame = Frame(frame)
     Label(new_frame, text=f'FileType: {fileType}', width= 15, pady=5, anchor=W, bd=5).pack(side=LEFT)
-    Label(new_frame, text=f'Moved to file: {filename}', padx=5, pady=5, anchor=W, bd=5).pack(side=LEFT)
+    Label(new_frame, text=f'Moved to file: {filepath}', padx=5, pady=5, anchor=W, bd=5).pack(side=LEFT)
     Button(new_frame, text="Delete", command=lambda: delete_by_type(new_frame, fileType)).pack(side=RIGHT)
-    dir_by_type[fileType] = filename
+    dir_by_type[fileType] = filepath
     new_frame.pack(fill=X)
 
 
-def add_element_name(frame: Frame, keyword: string, filename: string):
+# Adds a frame to the gui that represents an element from the keyword dictionary
+# 
+#   Adds all the required labels and buttons to the frame and registers the event handler
+#   for the button to trigger deletion when pressed. Also adds the element to the dir_by_name
+#   dictionary.
+# 
+#   @param  Frame   frame       parent frame to hold this element
+#   @param  string  keyword     name of the keyword to be added
+#   @param  string  filepath    filepath that a file with the given keyword should be moved to
+# 
+# 
+def add_element_name(frame: Frame, keyword: string, filepath: string):
     new_frame = Frame(frame)
     Label(new_frame, text=f'KeyWord: {keyword}', width=15, pady=5, anchor=W, bd=5).pack(side=LEFT)
-    Label(new_frame, text=f'Moved to file: {filename}', padx=5, pady=5, anchor=W, bd=5).pack(side=LEFT)
+    Label(new_frame, text=f'Moved to file: {filepath}', padx=5, pady=5, anchor=W, bd=5).pack(side=LEFT)
     Button(new_frame, text="Delete", command=lambda: delete_by_key(new_frame, keyword)).pack(side=RIGHT)
-    dir_by_name[keyword] = filename
+    dir_by_name[keyword] = filepath
     new_frame.pack(fill=X)
 
-
+# Removes an entry from the filetype dictionary and removes its associated frame from the gui
+# 
+#   @param  Frame   frame       frame that contains the info and button for this entry
+#   @param  string  element     key value for the given entry in the dir_by_type
+# 
+# 
 def delete_by_type(frame: Frame, element: string):
     dir_by_type.pop(element)
     frame.destroy()
 
+# Removes an entry from the keyword dictionary and removes its associated frame from the gui
+# 
+#   @param  Frame   frame       frame that contains the info and button for this entry
+#   @param  string  element     key value for the given entry in the dir_by_name
+# 
+# 
 def delete_by_key(frame: Frame, element: string):
     dir_by_name.pop(element)
     frame.destroy()
 
 
-
+# Prompt user for a new source directory and update global variables/labels to reflect change
+# 
+#   Allows user to select any directory in the computer through the file select dialog
+# 
+#   @param          self    containing frame -- UNUSED
+#   @param  Label   label   Label displaying the source directory
+# 
+#   
 def getFileLocation(self, label_to_change: Label):
+    
+    # Prompt user to select a new directory
     filename = askdirectory(
         title= 'Pick a folder to organize',
         initialdir='/'
@@ -289,12 +357,35 @@ def getFileLocation(self, label_to_change: Label):
     global source_dir
     source_dir = filename
 
-    #  THIS CHANGES THE LABEL TEXT AFTER IT HAS BEEN CREATED
+    #  Change text on label to new source directory 
     label_to_change.config(text = 'This is the location: ' + source_dir)
     
 
+
+# Create a new tkinter window, initialize, and run
 window = Tk()
 
 Window(window)
+window.resizable(False, False)
 
 window.mainloop()
+
+
+# THIS IS THE CODE TO UNCOMMENT FOR AUTOMATIC MONITORING (CAREFUL ABOUT SOURCE DIR SETTINGS BEFORE DOING SO)
+
+# if __name__ == "__main__":
+#     logging.basicConfig(level=logging.INFO,
+#                         format='%(asctime)s - %(message)s',
+#                         datefmt='%Y-%m-%d %H:%M:%S')
+#     path = source_dir
+#     event_handler = MoveHandler()
+#     observer = Observer()
+#     observer.schedule(event_handler, path, recursive=True)
+#     observer.start()
+#     try:
+#         while True:
+#             sleep(10)
+#     except KeyboardInterrupt:
+#         observer.stop()
+#     observer.join()
+
