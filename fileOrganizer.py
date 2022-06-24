@@ -99,7 +99,7 @@ class MoveHandler(FileSystemEventHandler):
                         logging.info("Moved document file: " + name)
                         return
                 for key in dir_by_type:    
-                    if name.endswith(str(key)):
+                    if name.lower().endswith(str(key)):
                         moveFile(dir_by_type[key], entry, name)
                         logging.info("Moved document file: " + name)
                         return
@@ -125,7 +125,7 @@ def trigger_organize():
                         was_found = True
                 if(was_found == False):
                     for key in dir_by_type:    
-                        if name.endswith(str(key)):
+                        if name.lower().endswith(str(key)):
                             moveFile(dir_by_type[key], entry, name)
                             logging.info("Moved document file: " + name)
 
