@@ -1,7 +1,8 @@
-from os import mkdir, scandir, rename
+from os import mkdir, scandir, rename, path
 from os.path import splitext, exists, join
 from shutil import move
 import string
+import sys
 from time import sleep
 
 import logging
@@ -20,15 +21,15 @@ source_dir: string = ""
 
 # Dictionary arranged by key phrases or words with destination based on assumed content if the key is found
 dir_by_name = {
-    "intel": "/Users/olivercowley/Desktop/Organized Downloads/Downloaded INTEL"
+    # "intel": "/Users/olivercowley/Desktop/Organized Downloads/Downloaded INTEL"
     }
 
 # Dictionary sorted by file type with intended destination for the given type
 dir_by_type = {
-    ".pdf": "/Users/olivercowley/Desktop/Organized Downloads/Downloaded PDFs",
-    ".html": "/Users/olivercowley/Desktop/Organized Downloads/Downloaded HTML",
-    ".jpg": "/Users/olivercowley/Desktop/Organized Downloads/Downloaded Images",
-    ".svg": "/Users/olivercowley/Desktop/Organized Downloads/Downloaded Images"
+    # ".pdf": "/Users/olivercowley/Desktop/Organized Downloads/Downloaded PDFs",
+    # ".html": "/Users/olivercowley/Desktop/Organized Downloads/Downloaded HTML",
+    # ".jpg": "/Users/olivercowley/Desktop/Organized Downloads/Downloaded Images",
+    # ".svg": "/Users/olivercowley/Desktop/Organized Downloads/Downloaded Images"
     }
 
 
@@ -40,7 +41,16 @@ monitoring: bool = False
 observer: Observer = None
 
 
-
+#  TODO: Document this function that reads in the types and keywords saved in settings 
+def testRead(type_frame: Frame, key_frame: Frame):
+    with open(path.join(sys.path[0], 'settings.txt')) as file:
+        for line in list(file):
+            curr = line.strip().split(',')
+            if curr[0] == 'type':
+                add_element_type(type_frame, curr[1], curr[2])
+            elif curr[0] == 'keyword':
+                add_element_name(key_frame, curr[1], curr[2])
+        
 
 
 # Moves the file from entry to dir/name or obtains a unique version of dir/name and then moves
@@ -255,6 +265,7 @@ class Window(Frame):
         # Button(self, text="Add new keyword", command=lambda: add_new_key(name_frame)).pack(side=RIGHT)
         # Button(self, text="LOG DIR BY TYPE", command=lambda: print(dir_by_type)).pack(side=LEFT)
         # Button(self, text="LOG DIR BY KEY", command=lambda: print(dir_by_name)).pack(side=LEFT)
+        Button(self, text="test read", command=lambda: testRead(type_frame, name_frame)).pack(side=LEFT)
 
 
 

@@ -1,0 +1,5 @@
+type,.pdf,/Users/olivercowley/Desktop/Organized Downloads/Downloaded PDFs
+type,.html,/Users/olivercowley/Desktop/Organized Downloads/Downloaded HTML
+type,.jpg,/Users/olivercowley/Desktop/Organized Downloads/Downloaded Images
+type,.svg,/Users/olivercowley/Desktop/Organized Downloads/Downloaded Images
+keyword,intel,/Users/olivercowley/Desktop/Organized Downloads/Downloaded INTEL
