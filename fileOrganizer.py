@@ -1,8 +1,7 @@
-from os import mkdir, scandir, rename, path
+from os import mkdir, scandir, rename
 from os.path import splitext, exists, join
 from shutil import move
 import string
-import sys
 from time import sleep
 
 import logging
@@ -20,17 +19,17 @@ from watchdog.events import FileSystemEventHandler
 source_dir: string = ""
 
 # Dictionary arranged by key phrases or words with destination based on assumed content if the key is found
-dir_by_name = {
+dir_by_name = {}
     # "intel": "/Users/olivercowley/Desktop/Organized Downloads/Downloaded INTEL"
-    }
+    
 
 # Dictionary sorted by file type with intended destination for the given type
-dir_by_type = {
+dir_by_type = {}
     # ".pdf": "/Users/olivercowley/Desktop/Organized Downloads/Downloaded PDFs",
     # ".html": "/Users/olivercowley/Desktop/Organized Downloads/Downloaded HTML",
     # ".jpg": "/Users/olivercowley/Desktop/Organized Downloads/Downloaded Images",
     # ".svg": "/Users/olivercowley/Desktop/Organized Downloads/Downloaded Images"
-    }
+    
 
 
 # This variable represents the current status of the organizer, if True then ongoing monitoring is happening, 
@@ -41,15 +40,61 @@ monitoring: bool = False
 observer: Observer = None
 
 
-#  TODO: Document this function that reads in the types and keywords saved in settings 
-def testRead(type_frame: Frame, key_frame: Frame):
-    with open(path.join(sys.path[0], 'settings.txt')) as file:
-        for line in list(file):
-            curr = line.strip().split(',')
-            if curr[0] == 'type':
-                add_element_type(type_frame, curr[1], curr[2])
-            elif curr[0] == 'keyword':
-                add_element_name(key_frame, curr[1], curr[2])
+# Loads organization rules from a settings file located in the same directory as the script
+# 
+#   Informs users if there is not a settings file yet. Otherwise parses the file and inputs the 
+#   rules in to the organizer, updating the gui accordingly. If the rule already exists then it is
+#   ignored, and if the filepath provided does not exist, the user is required to select one
+# 
+#   @param  Frame  type_frame   Frame that contains all of the file type rules
+#   @param  Frame  key_frame    Frame that contains all of the keyword rules
+# 
+def loadSettings(type_frame: Frame, key_frame: Frame):
+    if exists('settings.txt'):
+        with open('settings.txt', 'r') as file:
+            for line in list(file):
+                curr = line.strip().split('*')
+                if curr[0] == 'type':
+                    if curr[1] not in dir_by_type:
+                        if exists(curr[2]):
+                            add_element_type(type_frame, curr[1], curr[2])
+                        else:
+                            showinfo(message=f'The saved directory doesn\'t exist, please pick a directory for type {curr[1]}.')
+                            file_path = ''
+                            while file_path == '':
+                                file_path = askdirectory(
+                                    title= 'Pick a folder to put it in',
+                                    initialdir='/'
+                                )
+                            add_element_type(type_frame, curr[1], file_path)
+                elif curr[0] == 'keyword':
+                    if curr[1] not in dir_by_name:
+                        if exists(curr[2]):
+                            add_element_name(key_frame, curr[1], curr[2])
+                        else:
+                            showinfo(message=f'The saved directory doesn\'t exist, please pick a directory for keyword {curr[1]}.')
+                            file_path = ''
+                            while file_path == '':
+                                file_path = askdirectory(
+                                    title= 'Pick a folder to put it in',
+                                    initialdir='/'
+                                )
+                            add_element_name(key_frame, curr[1], file_path)
+    else:
+        showinfo(message='Sorry, you don\'t have a settings file yet!\n Add some organization rules and hit save to set one up.')            
+
+
+# Saves organization rules to a settings file, creates a new one if it does not already exist
+# 
+#   Formats the file according to the rules required to load the settings next time the organizer is run
+# 
+def saveSettings():
+    with open('settings.txt', 'w') as file:
+        for key in dir_by_type:
+            file.write(f'type*{key}*{dir_by_type[key]}\n')
+        for key in dir_by_name:
+            file.write(f'keyword*{key}*{dir_by_name[key]}\n')
+        
         
 
 
@@ -103,16 +148,17 @@ class MoveHandler(FileSystemEventHandler):
         with scandir(source_dir) as entries:
             for entry in entries:
                 name = entry.name
+                was_found = False
                 for key in dir_by_name:    
                     if str(key) in name.lower():
                         moveFile(dir_by_name[key], entry, name)
-                        logging.info("Moved document file: " + name)
-                        return
-                for key in dir_by_type:    
-                    if name.lower().endswith(str(key)):
-                        moveFile(dir_by_type[key], entry, name)
-                        logging.info("Moved document file: " + name)
-                        return
+                        # logging.info("Moved document file: " + name)
+                        was_found = True
+                if(was_found == False):
+                    for key in dir_by_type:    
+                        if name.lower().endswith(str(key)):
+                            moveFile(dir_by_type[key], entry, name)
+                            # logging.info("Moved document file: " + name)
 
 
 
@@ -131,13 +177,13 @@ def trigger_organize():
                 for key in dir_by_name:    
                     if str(key) in name.lower():
                         moveFile(dir_by_name[key], entry, name)
-                        logging.info("Moved document file: " + name)
+                        # logging.info("Moved document file: " + name)
                         was_found = True
                 if(was_found == False):
                     for key in dir_by_type:    
                         if name.lower().endswith(str(key)):
                             moveFile(dir_by_type[key], entry, name)
-                            logging.info("Moved document file: " + name)
+                            # logging.info("Moved document file: " + name)
 
 # Toggles between automatic observing/organization and manually triggered optimization
 # 
@@ -246,59 +292,73 @@ class Window(Frame):
         menu_options.add_command(label="Change file we are organizing", command=lambda: getFileLocation(self, organizing_location))
         menu_options.add_command(label="Add new type", command=lambda: add_new_filetype(type_frame))
         menu_options.add_command(label="Add new keyword", command=lambda: add_new_key(name_frame))
-        menubar.add_cascade(label='Settings', menu=menu_options)
+        menubar.add_cascade(label='Controls', menu=menu_options)
 
         menu_log = Menu(menubar, tearoff=0)
         menu_log.add_command(label="Print type dictionary", command=lambda: print(dir_by_type))
         menu_log.add_command(label="Print keyword dictionary", command=lambda: print(dir_by_name))
         
-        menubar.add_cascade(label='Dictionaries', menu=menu_log)
+        menubar.add_cascade(label='Dev Tools', menu=menu_log)
 
         self.master.config(menu=menubar)
 
+        # Load and save buttons for settings file
 
-        # IN WINDOW BUTTONS (If needed to be added back in)
-
-        # Button 
-        # Button(self, text="Click here to change file we are organizing", command=lambda: getFileLocation(self, organizing_location)).pack(side=LEFT)
-        # Button(self, text="Add new type", command=lambda: add_new_filetype(type_frame)).pack(side=RIGHT)
-        # Button(self, text="Add new keyword", command=lambda: add_new_key(name_frame)).pack(side=RIGHT)
-        # Button(self, text="LOG DIR BY TYPE", command=lambda: print(dir_by_type)).pack(side=LEFT)
-        # Button(self, text="LOG DIR BY KEY", command=lambda: print(dir_by_name)).pack(side=LEFT)
-        Button(self, text="test read", command=lambda: testRead(type_frame, name_frame)).pack(side=LEFT)
+        Button(self, text="Load Saved Settings", command=lambda: loadSettings(type_frame, name_frame)).pack(side=LEFT)
+        Button(self, text="Save Settings", command=saveSettings).pack(side=RIGHT)
 
 
 
 # Prompts user to enter a filetype to be included in the organization
 # 
 #   Popups prompt for the new filetype followed by the filepath of the folder to put the files of that type in
+#   If any of the prompts are canceled by the user, nothing is added to the gui or the directories and the function
+#   immediately returns
 # 
 #   @param  Frame  frame    Parent frame that holds keyword/filepath entries
 # 
 def add_new_filetype(frame: Frame):
-    new_filetype = askstring(title="Add this file type", prompt="Enter a new file type to organize")
+    new_filetype = ''
+    while new_filetype == '':
+        new_filetype = askstring(title="Add this file type", prompt="Enter a new file type to organize")
+    
+    if new_filetype is None:
+        return
 
+    
     filename = askdirectory(
         title= 'Pick a folder to put it in',
         initialdir='/'
     )
-    
+    if filename == '':
+        return
+
     add_element_type(frame, new_filetype, filename)
 
 
 # Prompts user to enter a keyword to be included in the organization
 # 
-#   Popups prompt for the new keyword followed by the filepath of the folder to put the files with they keyword in to
+#   Popups prompt for the new keyword followed by the filepath of the folder to put the files with they keyword in to.
+#   If any of the prompts are canceled by the user, nothing is added to the gui or the directories and the function
+#   immediately returns
 # 
 #   @param  Frame  frame    Parent frame that holds keyword/filepath entries
 # 
 def add_new_key(frame: Frame):
-    new_key = askstring(title="Add a new key", prompt="Enter a new keyword to sort by")
+    new_key = ''
+    while new_key == '':
+        new_key = askstring(title="Add a new key", prompt="Enter a new keyword to sort by")
 
+    if new_key is None:
+        return
+
+    
     filename = askdirectory(
         title= 'Pick a folder to put it in',
         initialdir='/'
     )
+    if filename == '':
+        return
     
     add_element_name(frame, new_key, filename)
 
@@ -396,6 +456,7 @@ def getFileLocation(self, label_to_change: Label):
 if __name__ == "__main__":
     window = Tk()
     
+    # This is the code to implement the console logging of the files when they are moved, not necessary beyond as a dev tool
     # logging.basicConfig(level=logging.INFO,
     #                     format='%(asctime)s - %(message)s',
     #                     datefmt='%Y-%m-%d %H:%M:%S')
