@@ -4,6 +4,9 @@ from shutil import move
 import string
 from time import sleep
 
+# TODO: make sure that this is documented and recorded somewhere
+import pyautogui as pa
+
 import logging
 from tkinter import *
 from tkinter.filedialog import askdirectory
@@ -39,6 +42,8 @@ monitoring: bool = False
 # Observer variable to allow for global access for starting and stopping the automated organization 
 observer: Observer = None
 
+# TODO: make this clearer and document this -- also need a way to ensure multiple wiggle handlers are not started at the same time (a boolean guard should be enough)
+callback: str = ''
 
 # Loads organization rules from a settings file located in the same directory as the script
 # 
@@ -211,6 +216,44 @@ def monitor(button: Button):
         button.config(fg= 'GREEN' if monitoring else 'RED')
 
 
+# TODO: Annotate this function
+# This function triggers the mouse wiggling once and then schedules another wiggle for some time afterwards, the name of the 'after' callback is assigned to the
+#  global var callback so that it can be used to cancel when the cancel button is pressed 
+
+# A guard will need to be implemented since you can schedule multiple wiggle cycles currently -- the free parking is no longer necessary in this way since after_cancel can clear the scheduled callback
+#  consequently the positions and those checks arent actually needed, the boolean guard would be enough as we are flipping it with a cancel button or perhaps the init button is a toggle like the observer has
+
+
+def jump_mouse(free_parking: Label, window: Tk):
+    counter = 0
+    xPos, yPos = pa.position()
+
+    print(pa.position())
+    pa.moveRel(200, 0)
+    print(pa.position())
+
+    pa.press('shift')
+        
+    pa.moveRel(-200, 0)
+    print(pa.position())
+    # sleep(2)
+    counter += 1
+
+    current_x = pa.position()[0] - free_parking.winfo_rootx()
+    current_y = pa.position()[1] - free_parking.winfo_rooty()
+
+    global callback
+    if(counter == 10 or (current_x > 0 and current_x < free_parking.winfo_width() and current_y > 0 and current_y < free_parking.winfo_height()) ):
+        print('Done done done')
+        window.after_cancel(callback)
+        
+    else:
+        
+        callback = window.after(2000, jump_mouse, free_parking, window)
+        
+
+
+
 # Window class that takes in a frame and initializes all settings and characteristics of the GUI
 # 
 #   Initializes and places all elements within the root frame before the Window is launched
@@ -260,6 +303,18 @@ class Window(Frame):
         global monitoring
         monitor_button = Button(source_frame, text='Monitoring?',fg='green' if monitoring else 'red', command=lambda: monitor(monitor_button))
         monitor_button.pack(side=RIGHT)
+
+
+
+        # TODO: document and clean this up, too much lamda stuff that is just raw calling functions, compartmentalize the functions and make it cleaner for things to be started and stopped
+        #  ALSO, make sure that the toggle or cancel clears all things, guard the cancel button (or make toggle instead) as after_cancel throws error if there isn't a valid after TO cancel
+        move_mouse = Button(source_frame, text='Move the Mouse to the right', command=lambda: jump_mouse(organizing_location, window))
+        move_mouse.pack(side=RIGHT)
+
+        global callback
+        cancel_move = Button(source_frame, text='Cancel mouse wiggle', command=lambda: window.after_cancel(callback))
+        cancel_move.pack(side=RIGHT)
+        
 
         # Frame setup for display of the various filetypes and keywords that are being checked for organization
 
