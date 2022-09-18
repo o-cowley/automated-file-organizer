@@ -148,6 +148,27 @@ class Test_NAME(ut.TestCase):
 
         print("Test saving loaded settings to file -- SUCCESS", end='\n')
 
+    def test_make_unique(self):
+        print("Testing function creating unique filenames", end='\n')
+
+        cwd = os.getcwd()
+
+        name = "test.txt"
+        result = fileOrganizer.makeUnique(cwd, name)
+        self.assertEqual(name, result)
+
+        # Make a dummy file to cause makeUnique to make a new filename
+        os.mkdir(f'{cwd}/{name}')
+
+        result = fileOrganizer.makeUnique(cwd, name)
+        self.assertNotEqual(name, result)
+        self.assertEqual('test(1).txt', result)
+
+        # Clean up the dummy file made
+        os.rmdir(f'{cwd}/{name}')
+
+        print("Testing function creating unique filenames -- SUCCESS", end='\n')
+
 
 
 
@@ -181,7 +202,7 @@ if __name__ == '__main__':
 # loadSettings -- DONE
 # saveSettings -- DONE
 # moveFile
-# makeUnique
+# makeUnique -- DONE
 # trigger_organize
 # monitor
 # *jump_mouse*

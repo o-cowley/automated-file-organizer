@@ -505,15 +505,10 @@ def getFileLocation(self, label_to_change: Label):
     showinfo(message="If you currently have monitoring turned on, please turn off and on again to update monitored directory")
 
 
-# TODO: document this function--it is to get a window so that it can be tested
+# TODO: document this function--it is to get a window so that it can be tested--INCLUDE BLOCK FOR RUN MODE
 def get_window_for_test():
     window = Tk()
     
-    # This is the code to implement the console logging of the files when they are moved, not necessary beyond as a dev tool
-    # logging.basicConfig(level=logging.INFO,
-    #                     format='%(asctime)s - %(message)s',
-    #                     datefmt='%Y-%m-%d %H:%M:%S')
-
     Window(window)
 
     window.resizable(False, False)
