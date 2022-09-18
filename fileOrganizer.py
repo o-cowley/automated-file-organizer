@@ -43,7 +43,7 @@ monitoring: bool = False
 observer: Observer = None
 
 # TODO: make this clearer and document this -- also need a way to ensure multiple wiggle handlers are not started at the same time (a boolean guard should be enough)
-callback: str = ''
+callback: str = ""
 
 # Loads organization rules from a settings file located in the same directory as the script
 # 
@@ -478,6 +478,7 @@ def delete_by_key(frame: Frame, element: string):
     frame.destroy()
 
 
+
 # Prompt user for a new source directory and update global variables/labels to reflect change
 # 
 #   Allows user to select any directory in the computer through the file select dialog
@@ -503,6 +504,21 @@ def getFileLocation(self, label_to_change: Label):
 
     showinfo(message="If you currently have monitoring turned on, please turn off and on again to update monitored directory")
 
+
+# TODO: document this function--it is to get a window so that it can be tested
+def get_window_for_test():
+    window = Tk()
+    
+    # This is the code to implement the console logging of the files when they are moved, not necessary beyond as a dev tool
+    # logging.basicConfig(level=logging.INFO,
+    #                     format='%(asctime)s - %(message)s',
+    #                     datefmt='%Y-%m-%d %H:%M:%S')
+
+    Window(window)
+
+    window.resizable(False, False)
+
+    return window
 
 
 

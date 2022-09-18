@@ -1,3 +1,6 @@
-type*.pdf*/Users/olivercowley/Desktop/Organized Downloads/Downloaded PDFs
-type*.html*/Users/olivercowley/Desktop/Organized Downloads/Downloaded HTML
-keyword*intel*/Users/olivercowley/Desktop/Organized Downloads/Downloaded INTEL
+type*jkl*/Users/olivercowley/Desktop/PersonalCode/Automation/DownloadOrganizer
+type*mno*/Users/olivercowley/Desktop/PersonalCode/Automation/DownloadOrganizer
+type*pqr*/Users/olivercowley/Desktop/PersonalCode/Automation/DownloadOrganizer
+keyword*abc*/Users/olivercowley/Desktop/PersonalCode/Automation/DownloadOrganizer
+keyword*def*/Users/olivercowley/Desktop/PersonalCode/Automation/DownloadOrganizer
+keyword*ghi*/Users/olivercowley/Desktop/PersonalCode/Automation/DownloadOrganizer
